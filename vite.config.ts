@@ -8,6 +8,7 @@ import { VitePWA } from "vite-plugin-pwa";
 const root = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  base: "/Bara/",
   plugins: [
     react(),
     tailwindcss(),
@@ -27,7 +28,7 @@ export default defineConfig({
         background_color: "#fafafa",
         icons: [
           {
-            src: "/bara_logo.png",
+            src: "bara_logo.png",
             sizes: "1024x1024",
             type: "image/png",
             purpose: "any maskable",

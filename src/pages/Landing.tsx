@@ -48,13 +48,15 @@ const features = [
 ];
 
 export function Landing() {
+  const logoUrl = `${import.meta.env.BASE_URL}bara_logo.png`;
+
   return (
     <div className="min-h-dvh bg-[var(--color-bara-bg)]">
       <header className="border-b border-[var(--color-bara-border)] bg-[var(--color-bara-surface)]/80 backdrop-blur-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-6 px-4 py-3 md:px-8">
           <Link to="/" className="flex shrink-0 items-center font-semibold">
             <img
-              src="/bara_logo.png"
+              src={logoUrl}
               alt="Logo BARA"
               className="h-12 w-12 rounded-lg border border-[var(--color-bara-border)] bg-white/90 object-contain p-0.5 sm:h-14 sm:w-14 md:h-[5.5rem] md:w-[5.5rem]"
             />

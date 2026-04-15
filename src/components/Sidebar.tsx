@@ -28,6 +28,7 @@ const nav = [
 export function Sidebar() {
   const { signOut, user } = useAuth();
   const uid = user?.id;
+  const logoUrl = `${import.meta.env.BASE_URL}bara_logo.png`;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", uid],
@@ -46,7 +47,7 @@ export function Sidebar() {
         <div className="flex min-w-0 items-center gap-3">
           <div className="bara-logo-wrap">
             <img
-              src="/bara_logo.png"
+              src={logoUrl}
               alt="Logo BARA"
               className="bara-logo-img h-12 w-12 rounded-lg border border-[var(--color-bara-border)] bg-white/90 object-contain p-0.5"
             />

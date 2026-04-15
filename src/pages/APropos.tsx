@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export function APropos() {
   const { user } = useAuth();
+  const logoUrl = `${import.meta.env.BASE_URL}bara_logo.png`;
 
   return (
     <div className="min-h-dvh bg-[var(--color-bara-bg)]">
@@ -11,7 +12,7 @@ export function APropos() {
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-6 px-4 py-3 md:px-8">
           <Link to="/" className="flex shrink-0 items-center font-semibold">
             <img
-              src="/bara_logo.png"
+              src={logoUrl}
               alt="Logo BARA"
               className="h-12 w-12 rounded-lg border border-[var(--color-bara-border)] bg-white/90 object-contain p-0.5 sm:h-14 sm:w-14 md:h-[5.5rem] md:w-[5.5rem]"
             />
