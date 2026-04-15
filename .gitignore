@@ -1,0 +1,9 @@
+node_modules
+dist
+.supabase
+.env
+.env.local
+*.local
+.DS_Store
+coverage
+*.tsbuildinfo

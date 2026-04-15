@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-bara-bg: oklch(0.985 0.002 250);
+  --color-bara-surface: oklch(1 0 0);
+  --color-bara-border: oklch(0.91 0.01 250);
+  --color-bara-muted: oklch(0.55 0.02 250);
+  --color-bara-accent: oklch(0.55 0.2 270);
+}
+
+.dark {
+  --color-bara-bg: oklch(0.17 0.022 165);
+  --color-bara-surface: oklch(0.21 0.02 165);
+  --color-bara-border: oklch(0.34 0.022 165);
+  --color-bara-muted: oklch(0.72 0.03 165);
+  --color-bara-accent: oklch(0.75 0.14 160);
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--font-sans);
+  background: var(--color-bara-bg);
+  color: oklch(0.2 0.02 260);
+}
+
+.dark body {
+  color: oklch(0.95 0.01 260);
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+/* Branding BARA : met le logo au centre de l'identité visuelle */
+.bara-topbar {
+  background:
+    radial-gradient(1200px 240px at 18% -40%, oklch(0.82 0.16 55 / 0.3), transparent 58%),
+    radial-gradient(1000px 240px at 82% -50%, oklch(0.84 0.16 160 / 0.24), transparent 56%),
+    var(--color-bara-surface);
+}
+
+.bara-logo-wrap {
+  position: relative;
+  isolation: isolate;
+}
+
+.bara-logo-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  z-index: -1;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 30% 50%, oklch(0.78 0.2 55 / 0.42), transparent 60%),
+    radial-gradient(circle at 72% 52%, oklch(0.8 0.18 160 / 0.38), transparent 62%);
+  filter: blur(10px);
+}
+
+.bara-logo-img {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--color-bara-border) 78%, white 22%),
+    0 10px 22px oklch(0.56 0.12 55 / 0.2);
+}
+
+.dark .bara-logo-img {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--color-bara-border) 82%, black 18%),
+    0 10px 22px oklch(0.1 0.03 160 / 0.55);
+}
