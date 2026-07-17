@@ -1,0 +1,12 @@
+node_modules
+dist
+.supabase
+supabase/.temp
+.env
+.env.*
+!.env.example
+.env.local
+*.local
+.DS_Store
+coverage
+*.tsbuildinfo

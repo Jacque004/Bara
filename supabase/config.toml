@@ -1,0 +1,13 @@
+# Identifiant local du projet (nom du dossier / référence CLI). Après `supabase link`,
+# le déploiement cible votre projet cloud via `.supabase/project-ref`.
+# Référence : https://supabase.com/docs/guides/cli/config
+
+project_id = "bara"
+
+[functions."generate-study-plan"]
+# Exiger un JWT valide (recommandé en production).
+verify_jwt = true
+
+[functions."send-alerts-email"]
+# Exiger un JWT valide (recommandé en production).
+verify_jwt = true
