@@ -10,7 +10,16 @@ export function friendlyAuthError(error: Error | null | undefined): string | nul
     lower.includes("too many requests") ||
     lower.includes("email rate limit")
   ) {
-    return "Trop de tentatives. Attendez 1–2 minutes puis réessayez.";
+    return "Trop de tentatives. Attendez 2–5 minutes avant de redemander un e-mail.";
+  }
+
+  if (
+    lower.includes("400") ||
+    lower.includes("redirect") ||
+    lower.includes("not allowed") ||
+    lower.includes("unsupported")
+  ) {
+    return "Lien de redirection non autorisé. Dans Supabase → Authentication → URL Configuration, ajoutez https://jacque004.github.io/Bara/**";
   }
 
   if (

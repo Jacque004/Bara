@@ -25,7 +25,8 @@ export function ForgotPassword() {
       <div className="w-full max-w-sm rounded-2xl border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] p-8 shadow-sm">
         <h1 className="text-center text-2xl font-bold">Réinitialiser</h1>
         <p className="mt-2 text-center text-sm text-[var(--color-bara-muted)]">
-          Nous vous enverrons un lien par e-mail.
+          Nous vous enverrons un lien par e-mail. Évitez de renvoyer plusieurs fois
+          d’affilée (limite Supabase).
         </p>
         {ok ? (
           <div className="mt-6 space-y-3 text-center text-sm text-green-700 dark:text-green-400">
