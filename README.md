@@ -1,6 +1,6 @@
 # BARA
 
-Application SaaS pour étudiants : matières, tâches, planning intelligent (Supabase Edge Function), tableau de bord, mode Focus (Pomodoro) et analytics.
+Application SaaS pour étudiants : matières, tâches, planning intelligent (Supabase Edge Function), tableau de bord, mode Focus et analytics.
 
 ## Stack
 
