@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { friendlyAuthError } from "@/lib/authErrors";
 
 export function ForgotPassword() {
   const { resetPassword } = useAuth();
@@ -15,7 +16,7 @@ export function ForgotPassword() {
     setPending(true);
     const { error } = await resetPassword(email);
     setPending(false);
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyAuthError(error));
     else setOk(true);
   }
 

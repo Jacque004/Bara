@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { friendlyAuthError } from "@/lib/authErrors";
 
 function usePostLoginPath() {
   const location = useLocation();
@@ -31,7 +32,7 @@ export function Login() {
     setPending(true);
     const { error } = await signIn(email, password);
     setPending(false);
-    if (error) setErr(error.message);
+    if (error) setErr(friendlyAuthError(error));
     else navigate(afterLogin, { replace: true });
   }
 
