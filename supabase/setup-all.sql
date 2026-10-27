@@ -98,3 +98,40 @@ begin
     alter publication supabase_realtime add table public.tasks;
   end if;
 end $$;
+
+-- Même propriétaire pour matière, tâche, session et créneau.
+alter table public.subjects drop constraint if exists subjects_id_user_key;
+alter table public.subjects
+  add constraint subjects_id_user_key unique (id, user_id);
+
+alter table public.tasks drop constraint if exists tasks_id_user_key;
+alter table public.tasks
+  add constraint tasks_id_user_key unique (id, user_id);
+
+alter table public.tasks drop constraint if exists tasks_subject_id_fkey;
+alter table public.tasks drop constraint if exists tasks_subject_same_owner_fkey;
+alter table public.tasks
+  add constraint tasks_subject_same_owner_fkey
+  foreign key (subject_id, user_id)
+  references public.subjects (id, user_id)
+  on delete cascade;
+
+alter table public.study_sessions drop constraint if exists study_sessions_task_id_fkey;
+alter table public.study_sessions drop constraint if exists study_sessions_task_same_owner_fkey;
+alter table public.study_sessions
+  add constraint study_sessions_task_same_owner_fkey
+  foreign key (task_id, user_id)
+  references public.tasks (id, user_id)
+  on delete cascade;
+
+alter table public.study_plans drop constraint if exists study_plans_task_id_fkey;
+alter table public.study_plans drop constraint if exists study_plans_task_same_owner_fkey;
+alter table public.study_plans
+  add constraint study_plans_task_same_owner_fkey
+  foreign key (task_id, user_id)
+  references public.tasks (id, user_id)
+  on delete cascade;
+
+create index if not exists idx_tasks_subject_user on public.tasks (subject_id, user_id);
+create index if not exists idx_sessions_task_user on public.study_sessions (task_id, user_id);
+create index if not exists idx_plans_task_user on public.study_plans (task_id, user_id);

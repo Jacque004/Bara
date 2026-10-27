@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { LEGAL } from "@/lib/legal";
 
 const linkClass = "text-orange-600 hover:underline dark:text-orange-400";
 
@@ -17,13 +16,6 @@ export function SiteFooter() {
         <Link to="/mentions-legales" className={linkClass}>
           Mentions légales
         </Link>
-      </p>
-      <p className="mt-2">
-        Responsable du traitement : {LEGAL.publisherName}
-        {" · "}
-        <a href={`mailto:${LEGAL.contactEmail}`} className={linkClass}>
-          {LEGAL.contactEmail}
-        </a>
       </p>
     </footer>
   );
