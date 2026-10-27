@@ -109,7 +109,7 @@ export function Subjects() {
             <EmptyState
               icon={BookOpen}
               title="Aucune matière encore"
-              description="Créez votre première matière ci-dessus — c’est le point de départ de vos tâches et du Focus."
+              description="Créez votre première matière ci-dessus. C’est le point de départ de vos tâches et du Focus."
             />
           </li>
         ) : (

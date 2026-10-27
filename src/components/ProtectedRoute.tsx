@@ -1,5 +1,8 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { GdprGate } from "@/components/GdprGate";
+import { RestrictionGate } from "@/components/RestrictionGate";
 import { useAuth } from "@/hooks/useAuth";
+import { hasGdprAcceptance, isProcessingRestricted } from "@/lib/gdpr";
 
 export function ProtectedRoute() {
   const { user, loading } = useAuth();
@@ -15,5 +18,7 @@ export function ProtectedRoute() {
   if (!user) {
     return <Navigate to="/connexion" replace state={{ from: location }} />;
   }
+  if (!hasGdprAcceptance(user.user_metadata)) return <GdprGate />;
+  if (isProcessingRestricted(user.user_metadata)) return <RestrictionGate />;
   return <Outlet />;
 }

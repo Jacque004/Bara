@@ -1,5 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { PageLoader } from "@/components/PageLoader";
+import { RouteTitle } from "@/components/RouteTitle";
 import { AuthProvider } from "@/hooks/AuthProvider";
 
 const Layout = lazy(() =>
@@ -20,6 +22,12 @@ const ForgotPassword = lazy(() =>
 );
 const APropos = lazy(() =>
   import("@/pages/APropos").then((module) => ({ default: module.APropos }))
+);
+const Confidentialite = lazy(() =>
+  import("@/pages/Confidentialite").then((module) => ({ default: module.Confidentialite }))
+);
+const MentionsLegales = lazy(() =>
+  import("@/pages/MentionsLegales").then((module) => ({ default: module.MentionsLegales }))
 );
 const HomeEntry = lazy(() =>
   import("@/pages/HomeEntry").then((module) => ({ default: module.HomeEntry }))
@@ -45,7 +53,8 @@ const Tasks = lazy(() => import("@/pages/Tasks").then((module) => ({ default: mo
 export default function App() {
   return (
     <AuthProvider>
-      <Suspense fallback={<div className="p-4 text-sm text-zinc-500">Chargement...</div>}>
+      <RouteTitle />
+      <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<HomeEntry />} />
           <Route path="/connexion" element={<Login />} />
@@ -53,6 +62,8 @@ export default function App() {
           <Route path="/mot-de-passe" element={<ForgotPassword />} />
           <Route path="/reinitialiser-mot-de-passe" element={<ResetPassword />} />
           <Route path="/apropos" element={<APropos />} />
+          <Route path="/confidentialite" element={<Confidentialite />} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/app" element={<Layout />}>
               <Route index element={<Dashboard />} />

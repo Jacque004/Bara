@@ -16,6 +16,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
 import {
   fetchProfile,
+  fetchStudyPlans,
   fetchStudySessions,
   fetchSubjects,
   fetchTasks,
@@ -27,6 +28,7 @@ import {
   greetingForHour,
   minutesToday,
 } from "@/lib/engagement";
+import { onboardingStorageKey } from "@/lib/gdpr";
 import type { Task } from "@/types/database";
 
 type TaskRow = Task & {
@@ -59,6 +61,12 @@ export function Dashboard() {
   const { data: profile } = useQuery({
     queryKey: ["profile", uid],
     queryFn: () => fetchProfile(uid!),
+    enabled: !!uid,
+  });
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ["plans", uid],
+    queryFn: () => fetchStudyPlans(uid!),
     enabled: !!uid,
   });
 
@@ -106,12 +114,10 @@ export function Dashboard() {
 
   useEffect(() => {
     if (!uid) return;
-    const raw = localStorage.getItem(`bara-onboarding-closed:${uid}`);
+    const raw = localStorage.getItem(onboardingStorageKey(uid));
     setOnboardingClosed(raw === "1");
   }, [uid]);
 
-  const onboardingDone =
-    onboardingClosed || (subjects.length > 0 && rows.length > 0 && sessions.length > 0);
   const onboardingSteps = [
     {
       label: "Créer une matière",
@@ -126,7 +132,7 @@ export function Dashboard() {
     {
       label: "Générer un premier planning",
       to: "/app/planning",
-      done: false,
+      done: plans.length > 0,
     },
     {
       label: "Lancer une session Focus",
@@ -134,10 +140,12 @@ export function Dashboard() {
       done: sessions.length > 0,
     },
   ];
+  const onboardingDone =
+    onboardingClosed || onboardingSteps.every((step) => step.done);
 
   const closeOnboarding = () => {
     if (!uid) return;
-    localStorage.setItem(`bara-onboarding-closed:${uid}`, "1");
+    localStorage.setItem(onboardingStorageKey(uid), "1");
     setOnboardingClosed(true);
   };
 
@@ -290,7 +298,8 @@ export function Dashboard() {
             <div>
               <h2 className="font-semibold">Alertes & rappels</h2>
               <p className="mt-1 text-sm text-[var(--color-bara-muted)]">
-                Ce qui demande ton attention aujourd’hui.
+                Rien n’est envoyé tout seul. Le bouton transmet ton e-mail et les titres des
+                tâches non terminées à Resend, aux États-Unis, seulement pour t’écrire.
               </p>
             </div>
             <button
@@ -326,27 +335,31 @@ export function Dashboard() {
           ) : (
             <ul className="mt-4 space-y-2">
               {overdue.map((t) => (
-                <li
-                  key={t.id}
-                  className="flex items-center gap-2 rounded-xl bg-red-500/10 px-3 py-2.5 text-sm"
-                >
-                  <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
-                  <span>
-                    <strong>{t.title}</strong> — en retard (
-                    {format(parseISO(t.deadline), "d MMM yyyy", { locale: fr })})
-                  </span>
+                <li key={t.id}>
+                  <Link
+                    to="/app/taches"
+                    className="flex items-center gap-2 rounded-xl bg-red-500/10 px-3 py-2.5 text-sm transition hover:bg-red-500/15"
+                  >
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                    <span>
+                      <strong>{t.title}</strong>, en retard (
+                      {format(parseISO(t.deadline), "d MMM yyyy", { locale: fr })})
+                    </span>
+                  </Link>
                 </li>
               ))}
               {soon.map((t) => (
-                <li
-                  key={t.id}
-                  className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2.5 text-sm"
-                >
-                  <Clock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <span>
-                    <strong>{t.title}</strong> — bientôt (
-                    {format(parseISO(t.deadline), "d MMM", { locale: fr })})
-                  </span>
+                <li key={t.id}>
+                  <Link
+                    to="/app/taches"
+                    className="flex items-center gap-2 rounded-xl bg-amber-500/10 px-3 py-2.5 text-sm transition hover:bg-amber-500/15"
+                  >
+                    <Clock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <span>
+                      <strong>{t.title}</strong>, bientôt (
+                      {format(parseISO(t.deadline), "d MMM", { locale: fr })})
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -368,21 +381,24 @@ export function Dashboard() {
           ) : (
             <ul className="mt-4 space-y-3">
               {upcoming.map((t) => (
-                <li
-                  key={t.id}
-                  className="rounded-xl border border-[var(--color-bara-border)] px-3 py-2.5 text-sm transition hover:border-orange-500/35"
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="h-2 w-2 rounded-full"
-                      style={{ background: t.subjects?.color ?? "#888" }}
-                    />
-                    <strong className="truncate">{t.title}</strong>
-                  </div>
-                  <p className="mt-1 text-xs text-[var(--color-bara-muted)]">
-                    Échéance :{" "}
-                    {format(parseISO(t.deadline), "d MMM yyyy", { locale: fr })}
-                  </p>
+                <li key={t.id}>
+                  <Link
+                    to="/app/focus"
+                    className="block rounded-xl border border-[var(--color-bara-border)] px-3 py-2.5 text-sm transition hover:border-orange-500/35"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ background: t.subjects?.color ?? "#888" }}
+                      />
+                      <strong className="truncate">{t.title}</strong>
+                    </div>
+                    <p className="mt-1 text-xs text-[var(--color-bara-muted)]">
+                      Échéance :{" "}
+                      {format(parseISO(t.deadline), "d MMM yyyy", { locale: fr })}
+                      {" · "}lancer un Focus
+                    </p>
+                  </Link>
                 </li>
               ))}
             </ul>

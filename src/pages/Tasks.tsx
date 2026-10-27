@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format, parseISO } from "date-fns";
+import { format, isBefore, parseISO, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useState } from "react";
-import { CheckSquare, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CheckSquare, Plus, Trash2 } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -26,6 +26,27 @@ const statuses: { v: TaskStatus; l: string }[] = [
   { v: "done", l: "Terminé" },
 ];
 
+const filters: { id: "all" | TaskStatus; label: string }[] = [
+  { id: "all", label: "Toutes" },
+  { id: "todo", label: "À faire" },
+  { id: "doing", label: "En cours" },
+  { id: "done", label: "Terminées" },
+];
+
+type TaskView = {
+  id: string;
+  title: string;
+  type: TaskType;
+  deadline: string;
+  status: TaskStatus;
+  subjects: { name: string; color: string } | null;
+};
+
+function isLate(task: Pick<TaskView, "deadline" | "status">) {
+  if (task.status === "done") return false;
+  return isBefore(parseISO(task.deadline), startOfDay(new Date()));
+}
+
 export function Tasks() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -37,11 +58,14 @@ export function Tasks() {
     enabled: !!uid,
   });
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [], isLoading } = useQuery({
     queryKey: ["tasks", uid],
     queryFn: () => fetchTasks(uid!),
     enabled: !!uid,
   });
+
+  const [filter, setFilter] = useState<(typeof filters)[number]["id"]>("all");
+  const [formPref, setFormPref] = useState<boolean | null>(null);
 
   const [subjectId, setSubjectId] = useState("");
   const [title, setTitle] = useState("");
@@ -86,16 +110,38 @@ export function Tasks() {
 
   const firstSubject = subjects[0]?.id ?? "";
   const sid = subjectId || firstSubject;
+  const rows = tasks as TaskView[];
+  const showForm = formPref ?? (!isLoading && rows.length === 0);
+  const visible = useMemo(() => {
+    return rows
+      .filter((task) => filter === "all" || task.status === filter)
+      .sort((a, b) => {
+        const late = Number(isLate(b)) - Number(isLate(a));
+        if (late !== 0) return late;
+        return a.deadline.localeCompare(b.deadline);
+      });
+  }, [rows, filter]);
 
   return (
     <div className="space-y-8 bara-enter">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Tâches</h1>
-        <p className="mt-1 text-[var(--color-bara-muted)]">
-          Créez des tâches, associez une matière et une échéance — puis enchaînez en Focus.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Tâches</h1>
+          <p className="mt-1 text-[var(--color-bara-muted)]">
+            Filtre tes échéances, puis enchaîne en Focus.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setFormPref(!showForm)}
+          className="bara-cta bara-touch inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-500"
+        >
+          <Plus className="h-4 w-4" />
+          {showForm ? "Masquer le formulaire" : "Nouvelle tâche"}
+        </button>
       </div>
 
+      {showForm && (
       <form
         className="grid gap-3 rounded-2xl border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] p-4 md:grid-cols-2"
         onSubmit={(e) => {
@@ -111,7 +157,8 @@ export function Tasks() {
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[var(--color-bara-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+            placeholder="Ex. Réviser le chapitre 3"
+            className="bara-field mt-1 w-full"
           />
         </div>
         <div>
@@ -119,7 +166,7 @@ export function Tasks() {
           <select
             value={sid}
             onChange={(e) => setSubjectId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+            className="bara-field mt-1 w-full bg-[var(--color-bara-surface)]"
           >
             {subjects.length === 0 ? (
               <option value="">Créez une matière d’abord</option>
@@ -137,7 +184,7 @@ export function Tasks() {
           <select
             value={type}
             onChange={(e) => setType(e.target.value as TaskType)}
-            className="mt-1 w-full rounded-lg border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+            className="bara-field mt-1 w-full bg-[var(--color-bara-surface)]"
           >
             {types.map((t) => (
               <option key={t.v} value={t.v}>
@@ -153,7 +200,7 @@ export function Tasks() {
             required
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[var(--color-bara-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+            className="bara-field mt-1 w-full"
           />
         </div>
         <div>
@@ -163,7 +210,7 @@ export function Tasks() {
             min={0}
             value={hours}
             onChange={(e) => setHours(Number(e.target.value))}
-            className="mt-1 w-full rounded-lg border border-[var(--color-bara-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
+            className="bara-field mt-1 w-full"
           />
         </div>
         <div>
@@ -178,18 +225,63 @@ export function Tasks() {
           />
           <p className="text-xs text-[var(--color-bara-muted)]">{difficulty}</p>
         </div>
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 space-y-2">
+          {subjects.length === 0 && (
+            <p className="text-sm text-[var(--color-bara-muted)]">
+              Crée d’abord une matière pour pouvoir ajouter une tâche.
+            </p>
+          )}
+          {createMut.isError && (
+            <p className="text-sm text-red-600" role="alert">
+              Impossible d’enregistrer la tâche. Réessaie dans un instant.
+            </p>
+          )}
           <button
             type="submit"
             disabled={!sid || createMut.isPending}
-            className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-500 disabled:opacity-60"
+            className="rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-500 disabled:opacity-60"
           >
-            Créer la tâche
+            {createMut.isPending ? "Enregistrement…" : "Créer la tâche"}
           </button>
         </div>
       </form>
+      )}
 
-      {tasks.length === 0 ? (
+      {rows.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto scrollbar-none" aria-label="Filtrer les tâches">
+          {filters.map((item) => {
+            const count =
+              item.id === "all"
+                ? rows.length
+                : rows.filter((task) => task.status === item.id).length;
+            const active = filter === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setFilter(item.id)}
+                className={[
+                  "bara-touch shrink-0 rounded-full px-3 text-sm font-medium transition",
+                  active
+                    ? "bg-orange-600 text-white"
+                    : "border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] text-[var(--color-bara-muted)]",
+                ].join(" ")}
+              >
+                {item.label}
+                <span className="ml-1.5 tabular-nums opacity-80">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="space-y-3" aria-hidden>
+          <div className="h-24 animate-pulse rounded-2xl bg-black/5 dark:bg-white/5" />
+          <div className="h-24 animate-pulse rounded-2xl bg-black/5 dark:bg-white/5" />
+        </div>
+      ) : rows.length === 0 ? (
         <EmptyState
           icon={CheckSquare}
           title="Pas encore de tâches"
@@ -201,34 +293,37 @@ export function Tasks() {
           actionLabel={subjects.length === 0 ? "Créer une matière" : undefined}
           actionTo={subjects.length === 0 ? "/app/matieres" : undefined}
         />
+      ) : visible.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-[var(--color-bara-border)] px-4 py-8 text-center text-sm text-[var(--color-bara-muted)]">
+          Aucune tâche dans ce filtre.
+        </p>
       ) : (
         <>
-          {/* Liste cartes — mobile */}
           <ul className="space-y-3 md:hidden">
-            {(
-              tasks as {
-                id: string;
-                title: string;
-                deadline: string;
-                status: TaskStatus;
-                subjects: { name: string; color: string } | null;
-              }[]
-            ).map((t) => (
+            {visible.map((t) => (
               <li
                 key={t.id}
-                className="rounded-2xl border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] p-4"
+                className={[
+                  "rounded-2xl border bg-[var(--color-bara-surface)] p-4",
+                  isLate(t)
+                    ? "border-red-500/40"
+                    : "border-[var(--color-bara-border)]",
+                ].join(" ")}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold leading-snug">{t.title}</p>
-                    <p className="mt-1 flex items-center gap-2 text-xs text-[var(--color-bara-muted)]">
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--color-bara-muted)]">
                       <span
                         className="h-2 w-2 shrink-0 rounded-full"
                         style={{ background: t.subjects?.color ?? "#888" }}
                       />
-                      <span className="truncate">{t.subjects?.name ?? "—"}</span>
+                      <span className="truncate">{t.subjects?.name ?? "Sans matière"}</span>
                       <span>·</span>
-                      <span>
+                      <span>{types.find((item) => item.v === t.type)?.l ?? t.type}</span>
+                      <span>·</span>
+                      <span className={isLate(t) ? "font-medium text-red-600 dark:text-red-400" : ""}>
+                        {isLate(t) ? "En retard · " : ""}
                         {format(parseISO(t.deadline), "d MMM yyyy", { locale: fr })}
                       </span>
                     </p>
@@ -267,7 +362,7 @@ export function Tasks() {
             ))}
           </ul>
 
-          {/* Tableau — desktop */}
+          {/* Tableau desktop */}
           <div className="hidden overflow-x-auto rounded-2xl border border-[var(--color-bara-border)] md:block">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead className="border-b border-[var(--color-bara-border)] bg-black/[0.02] dark:bg-white/[0.03]">
@@ -280,31 +375,31 @@ export function Tasks() {
                 </tr>
               </thead>
               <tbody>
-                {(
-                  tasks as {
-                    id: string;
-                    title: string;
-                    deadline: string;
-                    status: TaskStatus;
-                    subjects: { name: string; color: string } | null;
-                  }[]
-                ).map((t) => (
+                {visible.map((t) => (
                   <tr
                     key={t.id}
-                    className="border-b border-[var(--color-bara-border)] last:border-0 transition hover:bg-orange-500/[0.03]"
+                    className="border-b border-[var(--color-bara-border)] transition last:border-0 hover:bg-orange-500/[0.03]"
                   >
-                    <td className="px-4 py-3 font-medium">{t.title}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <span>{t.title}</span>
+                      <span className="mt-0.5 block text-xs font-normal text-[var(--color-bara-muted)]">
+                        {types.find((item) => item.v === t.type)?.l ?? t.type}
+                      </span>
+                    </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-2">
                         <span
                           className="h-2 w-2 rounded-full"
                           style={{ background: t.subjects?.color ?? "#888" }}
                         />
-                        {t.subjects?.name ?? "—"}
+                        {t.subjects?.name ?? "Sans matière"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-[var(--color-bara-muted)]">
-                      {format(parseISO(t.deadline), "d MMM yyyy", { locale: fr })}
+                      <span className={isLate(t) ? "font-medium text-red-600 dark:text-red-400" : ""}>
+                        {isLate(t) ? "En retard · " : ""}
+                        {format(parseISO(t.deadline), "d MMM yyyy", { locale: fr })}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
                       <select
@@ -331,6 +426,7 @@ export function Tasks() {
                           if (confirm("Supprimer cette tâche ?")) delMut.mutate(t.id);
                         }}
                         className="rounded-lg p-2 text-red-600 hover:bg-red-500/10"
+                        aria-label={`Supprimer ${t.title}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>

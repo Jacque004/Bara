@@ -1,3 +1,5 @@
+import { readPlanningSettings } from "@/lib/gdpr";
+import { LEGAL } from "@/lib/legal";
 import { supabase } from "@/lib/supabase";
 import type { Profile, Subject, Task, TaskStatus, TaskType } from "@/types/database";
 
@@ -241,7 +243,89 @@ export async function invokeSendAlertsEmail(userId: string) {
     );
   }
 
-  return (payload ?? {}) as { success?: boolean; sent_to?: string; message?: string };
+  return (payload ?? {}) as { success?: boolean; message?: string };
+}
+
+export type AccountExportMeta = {
+  email: string | null;
+  created_at: string | null;
+  age_confirmed_at: string | null;
+  privacy_accepted_at: string | null;
+  privacy_policy_version: string | null;
+};
+
+export async function exportAccountData(userId: string, account: AccountExportMeta) {
+  const [profile, subjects, tasks, sessions, plans] = await Promise.all([
+    fetchProfile(userId),
+    fetchSubjects(userId),
+    fetchTasks(userId),
+    fetchStudySessions(userId),
+    fetchStudyPlans(userId),
+  ]);
+  return {
+    format: "bara-export-v1",
+    exported_at: new Date().toISOString(),
+    account: { id: userId, ...account },
+    profile,
+    subjects,
+    tasks,
+    study_sessions: sessions,
+    study_plans: plans,
+    local_preferences: {
+      planning: readPlanningSettings(),
+    },
+  };
+}
+
+export function downloadAccountExport(data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `bara-donnees-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function invokeDeleteAccount() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Session expirée. Veuillez vous reconnecter.");
+  }
+
+  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`;
+  const res = await fetch(functionUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+      "Content-Type": "application/json",
+    },
+    body: "{}",
+  });
+
+  let payload: unknown = null;
+  try {
+    payload = await res.json();
+  } catch {
+    payload = null;
+  }
+
+  if (res.status === 404) {
+    throw new Error(
+      `La suppression automatique est indisponible. Écrivez à ${LEGAL.contactEmail} pour faire effacer votre compte.`
+    );
+  }
+
+  if (!res.ok) {
+    const details =
+      payload && typeof payload === "object" && "error" in payload
+        ? String((payload as { error?: unknown }).error ?? "")
+        : "";
+    throw new Error(details || `HTTP ${res.status} - Suppression impossible`);
+  }
 }
 
 export async function fetchProfile(userId: string) {

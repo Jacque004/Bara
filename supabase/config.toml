@@ -11,3 +11,6 @@ verify_jwt = true
 [functions."send-alerts-email"]
 # Exiger un JWT valide (recommandé en production).
 verify_jwt = true
+
+[functions."delete-account"]
+verify_jwt = true

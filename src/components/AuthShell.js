@@ -1,0 +1,7 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Link } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle";
+export function AuthShell({ title, subtitle, children, }) {
+    const logoUrl = `${import.meta.env.BASE_URL}bara_logo.png`;
+    return (_jsxs("div", { className: "bara-landing-hero flex min-h-dvh flex-col", children: [_jsxs("header", { className: "bara-safe-x mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3", children: [_jsxs(Link, { to: "/", className: "flex items-center gap-2 font-semibold tracking-tight", "aria-label": "Retour \u00E0 l\u2019accueil", children: [_jsx("img", { src: logoUrl, alt: "", className: "h-10 w-10 rounded-lg border border-[var(--color-bara-border)] bg-white/90 object-contain p-0.5" }), _jsx("span", { className: "hidden sm:inline", children: "BARA" })] }), _jsx(ThemeToggle, {})] }), _jsx("main", { className: "flex flex-1 items-center justify-center px-4 pb-12", children: _jsxs("div", { className: "bara-enter w-full max-w-sm rounded-3xl border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)]/92 p-6 shadow-sm backdrop-blur-md sm:p-8", children: [_jsx("h1", { className: "text-center text-2xl font-bold tracking-tight", children: title }), subtitle && (_jsx("p", { className: "mt-2 text-center text-sm leading-relaxed text-[var(--color-bara-muted)]", children: subtitle })), children] }) })] }));
+}

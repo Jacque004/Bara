@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { BarChart3 } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchStudySessions, fetchSubjects } from "@/lib/api";
 
@@ -43,7 +45,7 @@ export function Analytics() {
     return [...map.entries()]
       .map(([id, min]) => ({
         id,
-        name: subName.get(id) ?? "—",
+        name: subName.get(id) ?? "Sans nom",
         min,
       }))
       .sort((a, b) => b.min - a.min);
@@ -81,9 +83,15 @@ export function Analytics() {
       <section className="rounded-2xl border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] p-6">
         <h2 className="font-semibold">Temps par matière</h2>
         {bySubject.length === 0 ? (
-          <p className="mt-4 text-sm text-[var(--color-bara-muted)]">
-            Aucune session avec tâche liée pour l’instant.
-          </p>
+          <div className="mt-4">
+            <EmptyState
+              icon={BarChart3}
+              title="Pas encore de temps enregistré"
+              description="Lance une session Focus sur une tâche pour voir ici le temps passé par matière."
+              actionLabel="Ouvrir le Focus"
+              actionTo="/app/focus"
+            />
+          </div>
         ) : (
           <ul className="mt-4 space-y-4">
             {bySubject.map((s) => {
@@ -98,7 +106,7 @@ export function Analytics() {
                   </div>
                   <div className="mt-1 h-2 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
                     <div
-                      className="h-full rounded-full bg-orange-600"
+                      className="bara-progress-fill h-full rounded-full bg-orange-600"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -115,7 +123,7 @@ export function Analytics() {
           Moyenne :{" "}
           {sessionsCount > 0 && totalMin > 0
             ? `${Math.round(totalMin / sessionsCount)} min par session`
-            : "—"}
+            : "pas encore de donnée"}
         </p>
       </section>
     </div>

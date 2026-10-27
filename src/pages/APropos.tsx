@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { BookOpen, Heart, Languages, Shield } from "lucide-react";
+import { SiteFooter } from "@/components/SiteFooter";
 import { useAuth } from "@/hooks/useAuth";
 
 export function APropos() {
@@ -63,7 +64,7 @@ export function APropos() {
               <p className="mt-2 text-sm leading-relaxed text-[var(--color-bara-muted)]">
                 J’ai choisi comme nom de l’application <strong>BARA</strong>, qui veut dire{" "}
                 <strong>travailler</strong> ou <strong>bosser</strong> dans le jargon ivoirien.
-                Un clin d’œil à l’idée de s’y mettre pour de vrai — cours, devoirs et révisions.
+                Un clin d’œil à l’idée de s’y mettre pour de vrai : cours, devoirs et révisions.
               </p>
             </div>
           </li>
@@ -87,8 +88,15 @@ export function APropos() {
             <div>
               <h2 className="font-semibold">Données personnelles</h2>
               <p className="mt-2 text-sm leading-relaxed text-[var(--color-bara-muted)]">
-                Chaque compte ne voit que ses propres données grâce aux règles de sécurité
-                (RLS) côté base. Aucun partage entre utilisateurs.
+                Chaque compte ne voit que ses propres données. Les finalités, les destinataires
+                et vos droits sont décrits dans la{" "}
+                <Link
+                  to="/confidentialite"
+                  className="text-orange-600 hover:underline dark:text-orange-400"
+                >
+                  politique de confidentialité
+                </Link>
+                .
               </p>
             </div>
           </li>
@@ -116,9 +124,7 @@ export function APropos() {
         </p>
       </main>
 
-      <footer className="border-t border-[var(--color-bara-border)] py-8 text-center text-xs text-[var(--color-bara-muted)]">
-        BARA — organisation pour étudiants
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

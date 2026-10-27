@@ -1,78 +1,68 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { AuthShell } from "@/components/AuthShell";
 import { useAuth } from "@/hooks/useAuth";
 import { friendlyAuthError } from "@/lib/authErrors";
 
+/**
+ * Accès sans e-mail de reset (évite les limites SMTP Supabase).
+ * → Google, ou connexion puis changement dans Profil.
+ */
 export function ForgotPassword() {
-  const { resetPassword } = useAuth();
-  const [email, setEmail] = useState("");
+  const { signInWithGoogle } = useAuth();
   const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
   const [pending, setPending] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function onGoogle() {
     setErr(null);
     setPending(true);
-    const { error } = await resetPassword(email);
+    const { error } = await signInWithGoogle();
     setPending(false);
     if (error) setErr(friendlyAuthError(error));
-    else setOk(true);
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--color-bara-bg)] px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] p-8 shadow-sm">
-        <h1 className="text-center text-2xl font-bold">Réinitialiser</h1>
-        <p className="mt-2 text-center text-sm text-[var(--color-bara-muted)]">
-          Nous vous enverrons un lien par e-mail. Évitez de renvoyer plusieurs fois
-          d’affilée (limite Supabase).
-        </p>
-        {ok ? (
-          <div className="mt-6 space-y-3 text-center text-sm text-green-700 dark:text-green-400">
-            <p>Si un compte existe, un e-mail a été envoyé.</p>
-            <p className="text-[var(--color-bara-muted)]">
-              Ouvrez le lien depuis le même navigateur, puis choisissez votre nouveau mot de
-              passe.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium">E-mail</label>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--color-bara-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-            {err && <p className="text-sm text-red-600">{err}</p>}
-            <button
-              type="submit"
-              disabled={pending}
-              className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white hover:bg-orange-500 disabled:opacity-60"
-            >
-              {pending ? "Envoi…" : "Envoyer le lien"}
-            </button>
-          </form>
+    <AuthShell
+      title="Accès au compte"
+      subtitle="Connectez-vous autrement, puis changez le mot de passe dans votre profil."
+    >
+        <div className="mt-6 space-y-3">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => void onGoogle()}
+            className="w-full rounded-lg border border-[var(--color-bara-border)] bg-[var(--color-bara-bg)] py-2.5 text-sm font-semibold hover:bg-black/[0.03] disabled:opacity-60 dark:hover:bg-white/[0.05]"
+          >
+            {pending ? "Redirection…" : "Continuer avec Google"}
+          </button>
+
+          <Link
+            to="/connexion"
+            className="block w-full rounded-lg bg-orange-600 py-2.5 text-center text-sm font-semibold text-white hover:bg-orange-500"
+          >
+            Se connecter avec e-mail
+          </Link>
+        </div>
+
+        {err && (
+          <p className="mt-4 text-sm text-red-600" role="alert">
+            {err}
+          </p>
         )}
+
+        <ol className="mt-6 list-decimal space-y-2 pl-5 text-sm text-[var(--color-bara-muted)]">
+          <li>Connectez-vous (Google ou e-mail si vous vous souvenez du mot de passe).</li>
+          <li>
+            Allez dans <strong>Profil</strong> → section Sécurité.
+          </li>
+          <li>Définissez un nouveau mot de passe (aucun e-mail envoyé).</li>
+        </ol>
+
         <p className="mt-4 text-center text-sm">
           <Link to="/connexion" className="text-orange-600 hover:underline dark:text-orange-400">
             Retour à la connexion
           </Link>
-          {" · "}
-          <Link to="/" className="text-orange-600 hover:underline dark:text-orange-400">
-            Accueil
-          </Link>
-          {" · "}
-          <Link to="/apropos" className="text-orange-600 hover:underline dark:text-orange-400">
-            À propos
-          </Link>
         </p>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

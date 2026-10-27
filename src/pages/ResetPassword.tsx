@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthShell } from "@/components/AuthShell";
+import { PasswordField } from "@/components/PasswordField";
 import { getPasswordStrength } from "@/lib/passwordStrength";
+import { RECOVERY_FLAG } from "@/lib/gdpr";
 import { supabase } from "@/lib/supabase";
-
-const RECOVERY_FLAG = "bara-password-recovery";
 
 export function ResetPassword() {
   const navigate = useNavigate();
@@ -149,13 +150,10 @@ export function ResetPassword() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--color-bara-bg)] px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] p-8 shadow-sm">
-        <h1 className="text-center text-2xl font-bold">Nouveau mot de passe</h1>
-        <p className="mt-2 text-center text-sm text-[var(--color-bara-muted)]">
-          Choisissez un nouveau mot de passe pour votre compte.
-        </p>
-
+    <AuthShell
+      title="Nouveau mot de passe"
+      subtitle="Choisissez un mot de passe robuste pour votre compte."
+    >
         {!ready ? (
           <p className="mt-6 text-center text-sm text-[var(--color-bara-muted)]">
             Vérification du lien…
@@ -178,48 +176,44 @@ export function ResetPassword() {
           </p>
         ) : (
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium">Nouveau mot de passe</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--color-bara-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              {password.length > 0 && (
-                <div className="mt-2">
-                  <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
-                    <div
-                      className={`h-2 rounded-full transition-all ${strength.color}`}
-                      style={{ width: strength.width }}
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-[var(--color-bara-muted)]">
-                    Force du mot de passe : {strength.label}
-                  </p>
+            <PasswordField
+              label="Nouveau mot de passe"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {password.length > 0 && (
+              <div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+                  <div
+                    className={`h-2 rounded-full transition-all ${strength.color}`}
+                    style={{ width: strength.width }}
+                  />
                 </div>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Confirmer le mot de passe</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-[var(--color-bara-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-            {err && <p className="text-sm text-red-600">{err}</p>}
+                <p className="mt-1 text-xs text-[var(--color-bara-muted)]">
+                  Force : {strength.label}
+                </p>
+              </div>
+            )}
+            <PasswordField
+              label="Confirmer le mot de passe"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
+            {err && (
+              <p className="text-sm text-red-600" role="alert">
+                {err}
+              </p>
+            )}
             <button
               type="submit"
               disabled={pending || strength.label !== "Fort"}
-              className="w-full rounded-lg bg-orange-600 py-2.5 text-sm font-semibold text-white hover:bg-orange-500 disabled:opacity-60"
+              className="bara-cta w-full rounded-xl bg-orange-600 py-3 text-sm font-semibold text-white hover:bg-orange-500 disabled:opacity-60"
             >
               {pending ? "Mise à jour…" : "Changer le mot de passe"}
             </button>
@@ -231,7 +225,6 @@ export function ResetPassword() {
             Retour à la connexion
           </Link>
         </p>
-      </div>
-    </div>
+    </AuthShell>
   );
 }

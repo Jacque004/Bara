@@ -1,7 +1,9 @@
 @import "tailwindcss";
+@import "@fontsource-variable/dm-sans";
+@import "@fontsource-variable/dm-sans/wght-italic.css";
 
 @theme {
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans Variable", "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --color-bara-bg: oklch(0.985 0.002 250);
   --color-bara-surface: oklch(1 0 0);
   --color-bara-border: oklch(0.91 0.01 250);
@@ -217,6 +219,34 @@ body {
   transform: scale(0.98);
 }
 
+.bara-field {
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-bara-border);
+  background: transparent;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.bara-field:focus {
+  border-color: oklch(0.7 0.17 45);
+  box-shadow: 0 0 0 3px oklch(0.7 0.17 45 / 0.28);
+}
+
+::selection {
+  background: oklch(0.75 0.16 45 / 0.35);
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid oklch(0.62 0.19 45);
+  outline-offset: 2px;
+}
+
 /* Mobile : safe areas, touch, barre du bas */
 .bara-touch {
   min-height: 44px;
@@ -253,6 +283,10 @@ body {
     padding-left: max(1rem, env(safe-area-inset-left));
     padding-right: max(1rem, env(safe-area-inset-right));
   }
+}
+
+input[type="range"] {
+  accent-color: oklch(0.65 0.19 45);
 }
 
 input,

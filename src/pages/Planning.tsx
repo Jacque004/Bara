@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Loader2, Sparkles } from "lucide-react";
+import { CalendarDays, Loader2, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchStudyPlans, invokeGenerateStudyPlan } from "@/lib/api";
+import { PLANNING_SETTINGS_KEY } from "@/lib/gdpr";
 
 type PlanRow = {
   id: string;
@@ -21,8 +23,6 @@ function taskTitle(
   if (!t) return null;
   return Array.isArray(t) ? t[0] ?? null : t;
 }
-
-const SETTINGS_KEY = "bara-planning-settings";
 
 type PlanningSettings = {
   session_minutes: number;
@@ -50,7 +50,7 @@ export function Planning() {
   const [settings, setSettings] = useState<PlanningSettings>(defaultSettings);
 
   useEffect(() => {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = localStorage.getItem(PLANNING_SETTINGS_KEY);
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw) as Partial<PlanningSettings>;
@@ -69,7 +69,7 @@ export function Planning() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    localStorage.setItem(PLANNING_SETTINGS_KEY, JSON.stringify(settings));
   }, [settings]);
 
   const { data: plans = [], isLoading } = useQuery({
@@ -100,12 +100,8 @@ export function Planning() {
             Planning intelligent
           </h1>
           <p className="mt-1 max-w-xl text-[var(--color-bara-muted)]">
-            Générez un planning basé sur la priorité :{" "}
-            <code className="rounded bg-black/5 px-1 text-xs dark:bg-white/10">
-              (difficulté × 2 + urgence) − progression
-            </code>
-            . Déployez la fonction Edge{" "}
-            <code className="text-xs">generate-study-plan</code> sur Supabase.
+            BARA répartit tes tâches ouvertes en créneaux, en commençant par ce qui
+            est urgent ou difficile.
           </p>
         </div>
         <button
@@ -183,10 +179,7 @@ export function Planning() {
           <p className="font-medium">La génération du planning a échoué.</p>
           <p className="mt-1">
             {(genMut.error as Error)?.message ??
-              "Impossible d’appeler la fonction. Vérifiez le déploiement Edge et les variables."}
-          </p>
-          <p className="mt-1 text-xs opacity-90">
-            Vérifie ta session, la config Supabase et les paramètres saisis ci-dessus.
+              "Réessaie dans un instant. Si le problème continue, vérifie ta connexion."}
           </p>
         </div>
       )}
@@ -200,11 +193,15 @@ export function Planning() {
         )}
 
       {isLoading ? (
-        <p className="text-[var(--color-bara-muted)]">Chargement…</p>
+        <div className="h-36 animate-pulse rounded-2xl bg-black/5 dark:bg-white/5" aria-hidden />
       ) : dates.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-[var(--color-bara-border)] p-8 text-center text-[var(--color-bara-muted)]">
-          Aucun créneau. Ajoutez des tâches non terminées puis générez le planning.
-        </p>
+        <EmptyState
+          icon={CalendarDays}
+          title="Aucun créneau pour l’instant"
+          description="Ajoute des tâches encore ouvertes, puis génère un planning pour voir ta semaine."
+          actionLabel="Ajouter une tâche"
+          actionTo="/app/taches"
+        />
       ) : (
         <div className="space-y-6">
           {dates.map((d) => (
@@ -223,7 +220,8 @@ export function Planning() {
                   >
                     <span>{taskTitle(p.tasks)?.title ?? "Tâche"}</span>
                     <span className="text-[var(--color-bara-muted)]">
-                      {p.duration_minutes} min · prio {p.priority_score.toFixed(2)}
+                      {p.duration_minutes} min
+                      {p.priority_score >= 8 ? " · prioritaire" : ""}
                     </span>
                   </li>
                 ))}

@@ -6,8 +6,14 @@ import {
   type ReactNode,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { GDPR_PENDING_KEY, gdprAcceptancePayload, hasGdprAcceptance } from "@/lib/gdpr";
 import { supabase } from "@/lib/supabase";
 import { AuthContext } from "./AuthContext";
+
+function appOriginRedirect(path: string) {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return `${window.location.origin}${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -38,13 +44,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    const pending = sessionStorage.getItem(GDPR_PENDING_KEY);
+    const current = session?.user;
+    if (!pending || !current) return;
+    if (hasGdprAcceptance(current.user_metadata)) {
+      sessionStorage.removeItem(GDPR_PENDING_KEY);
+      return;
+    }
+    let cancelled = false;
+    void supabase.auth
+      .updateUser({ data: gdprAcceptancePayload(pending) })
+      .then(({ error }) => {
+        if (!cancelled && !error) sessionStorage.removeItem(GDPR_PENDING_KEY);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
   const signIn = useCallback(async (email: string, password: string) => {
+    sessionStorage.removeItem(GDPR_PENDING_KEY);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error as Error | null };
   }, []);
 
   const signUp = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: gdprAcceptancePayload() },
+    });
+    return { error: error as Error | null };
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    sessionStorage.setItem(GDPR_PENDING_KEY, new Date().toISOString());
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: appOriginRedirect("/app"),
+      },
+    });
+    if (error) sessionStorage.removeItem(GDPR_PENDING_KEY);
     return { error: error as Error | null };
   }, []);
 
@@ -52,11 +94,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   }, []);
 
-  const resetPassword = useCallback(async (email: string) => {
-    const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-    const redirect = `${window.location.origin}${base}/reinitialiser-mot-de-passe`;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirect,
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error: error as Error | null };
+  }, []);
+
+  const updateEmail = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.updateUser(
+      { email },
+      { emailRedirectTo: appOriginRedirect("/app/profil") }
+    );
+    return { error: error as Error | null };
+  }, []);
+
+  const acceptGdpr = useCallback(async () => {
+    const { error } = await supabase.auth.updateUser({ data: gdprAcceptancePayload() });
+    return { error: error as Error | null };
+  }, []);
+
+  const restrictProcessing = useCallback(async () => {
+    const { error } = await supabase.auth.updateUser({
+      data: { processing_restricted_at: new Date().toISOString() },
+    });
+    return { error: error as Error | null };
+  }, []);
+
+  const liftProcessingRestriction = useCallback(async () => {
+    const { error } = await supabase.auth.updateUser({
+      data: { processing_restricted_at: "" },
     });
     return { error: error as Error | null };
   }, []);
@@ -68,10 +133,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signIn,
       signUp,
+      signInWithGoogle,
       signOut,
-      resetPassword,
+      updatePassword,
+      updateEmail,
+      acceptGdpr,
+      restrictProcessing,
+      liftProcessingRestriction,
     }),
-    [session, loading, signIn, signUp, signOut, resetPassword]
+    [
+      session,
+      loading,
+      signIn,
+      signUp,
+      signInWithGoogle,
+      signOut,
+      updatePassword,
+      updateEmail,
+      acceptGdpr,
+      restrictProcessing,
+      liftProcessingRestriction,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

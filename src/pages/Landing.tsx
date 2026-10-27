@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { SiteFooter } from "@/components/SiteFooter";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   BarChart3,
   BookOpen,
@@ -43,12 +45,16 @@ const features = [
   {
     icon: CalendarDays,
     title: "Rappels",
-    text: "Alertes sur les deadlines directement dans l’application.",
+    text: "Les échéances s’affichent dans l’application. L’e-mail de rappel part seulement si vous le demandez.",
   },
 ];
 
 export function Landing() {
   const logoUrl = `${import.meta.env.BASE_URL}bara_logo.png`;
+  const location = useLocation();
+  const accountDeleted = Boolean(
+    (location.state as { accountDeleted?: boolean } | null)?.accountDeleted
+  );
 
   return (
     <div className="min-h-dvh bg-[var(--color-bara-bg)]">
@@ -62,11 +68,18 @@ export function Landing() {
             />
           </Link>
           <div className="flex items-center gap-1.5 sm:gap-3">
+            <ThemeToggle />
             <Link
               to="/apropos"
               className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-bara-muted)] transition hover:bg-black/5 sm:inline-flex dark:hover:bg-white/5"
             >
               À propos
+            </Link>
+            <Link
+              to="/confidentialite"
+              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-bara-muted)] transition hover:bg-black/5 md:inline-flex dark:hover:bg-white/5"
+            >
+              Confidentialité
             </Link>
             <Link
               to="/connexion"
@@ -86,6 +99,11 @@ export function Landing() {
       </header>
 
       <main>
+        {accountDeleted && (
+          <p className="mx-auto max-w-5xl px-4 pt-6 text-center text-sm text-green-700 dark:text-green-400 md:px-8">
+            Votre compte et les données associées ont été supprimés.
+          </p>
+        )}
         <section className="bara-landing-hero">
           <div className="bara-safe-x mx-auto flex min-h-[min(78dvh,720px)] max-w-5xl flex-col items-center justify-center px-4 py-12 text-center sm:py-16 md:px-8 md:py-20">
             <img
@@ -101,7 +119,7 @@ export function Landing() {
               <span className="text-orange-600 dark:text-orange-400">sans friction</span>
             </h1>
             <p className="bara-enter bara-enter-delay-2 mx-auto mt-4 max-w-xl text-base text-[var(--color-bara-muted)] text-pretty sm:mt-5 sm:text-lg">
-              Matières, devoirs et Focus au même endroit — un rythme d’étude qui se
+              Matières, devoirs et Focus au même endroit. Le rythme d’étude se
               construit session après session.
             </p>
             <div className="bara-enter bara-enter-delay-3 mt-8 flex w-full max-w-sm flex-col gap-2.5 sm:mt-9 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3">
@@ -176,14 +194,7 @@ export function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-[var(--color-bara-border)] py-8 text-center text-xs text-[var(--color-bara-muted)]">
-        <p>BARA — organisation pour étudiants</p>
-        <p className="mt-2">
-          <Link to="/apropos" className="text-orange-600 hover:underline dark:text-orange-400">
-            À propos
-          </Link>
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

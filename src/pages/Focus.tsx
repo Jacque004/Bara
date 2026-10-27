@@ -83,6 +83,15 @@ export function Focus() {
   const mm = Math.floor(Math.max(0, left) / 60);
   const ss = Math.max(0, left) % 60;
 
+  useEffect(() => {
+    if (!running) {
+      document.title = "Focus · BARA";
+      return;
+    }
+    const label = phase === "work" ? "Focus" : "Pause";
+    document.title = `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")} · ${label} · BARA`;
+  }, [running, mm, ss, phase]);
+
   const selectedTitle = useMemo(
     () => open.find((t) => t.id === taskId)?.title,
     [open, taskId]
@@ -115,7 +124,7 @@ export function Focus() {
           {justCompleted && (
             <div className="bara-celebrate mb-5 flex items-center justify-center gap-2 rounded-xl bg-green-500/12 px-3 py-2 text-sm font-medium text-green-700 dark:text-green-400">
               <CheckCircle2 className="h-4 w-4" />
-              Session enregistrée — belle avance.
+              Session enregistrée. Belle avance.
             </div>
           )}
 
@@ -214,7 +223,7 @@ export function Focus() {
           </div>
 
           <p className="mt-5 text-xs text-[var(--color-bara-muted)]">
-            Astuce : reste sur cet écran — chaque session alimente ta série du jour.
+            Astuce : reste sur cet écran. Chaque session alimente ta série du jour.
           </p>
           <Link
             to="/app"

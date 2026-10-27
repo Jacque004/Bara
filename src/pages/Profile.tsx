@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BarChart3,
@@ -11,16 +11,26 @@ import {
   Timer,
   UserCircle2,
 } from "lucide-react";
+import { PasswordField } from "@/components/PasswordField";
+import { DataRightsPanel } from "@/components/DataRightsPanel";
 import { useAuth } from "@/hooks/useAuth";
+import { friendlyAuthError } from "@/lib/authErrors";
+import { getPasswordStrength } from "@/lib/passwordStrength";
 import { fetchProfile, fetchStudySessions, fetchTasks, upsertProfile } from "@/lib/api";
 
 export function Profile() {
-  const { user } = useAuth();
+  const { user, updatePassword } = useAuth();
   const qc = useQueryClient();
   const uid = user?.id;
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwdErr, setPwdErr] = useState<string | null>(null);
+  const [pwdOk, setPwdOk] = useState(false);
+  const [pwdPending, setPwdPending] = useState(false);
+  const strength = useMemo(() => getPasswordStrength(password), [password]);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", uid],
@@ -59,6 +69,36 @@ export function Profile() {
     },
   });
 
+  async function onChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwdErr(null);
+    setPwdOk(false);
+    if (password.length < 6) {
+      setPwdErr("Le mot de passe doit contenir au moins 6 caractères.");
+      return;
+    }
+    if (strength.label !== "Fort") {
+      setPwdErr(
+        "Choisissez un mot de passe plus robuste (8+ caractères, majuscule, minuscule, chiffre et caractère spécial)."
+      );
+      return;
+    }
+    if (password !== confirmPassword) {
+      setPwdErr("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    setPwdPending(true);
+    const { error } = await updatePassword(password);
+    setPwdPending(false);
+    if (error) {
+      setPwdErr(friendlyAuthError(error));
+      return;
+    }
+    setPassword("");
+    setConfirmPassword("");
+    setPwdOk(true);
+  }
+
   const doneTasks = tasks.filter((t: { status: string }) => t.status === "done").length;
   const totalTasks = tasks.length;
   const studiedMin = (sessions as { duration_minutes: number }[]).reduce(
@@ -83,7 +123,7 @@ export function Profile() {
           <div className="min-w-0">
             <h2 className="text-lg font-semibold">Compte étudiant</h2>
             <p className="mt-1 truncate text-sm text-[var(--color-bara-muted)]">
-              {user?.email ?? "—"}
+              {user?.email ?? "E-mail indisponible"}
             </p>
           </div>
         </div>
@@ -113,14 +153,14 @@ export function Profile() {
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <InfoRow icon={Mail} label="E-mail" value={user?.email ?? "—"} />
+          <InfoRow icon={Mail} label="E-mail" value={user?.email ?? "E-mail indisponible"} />
           <InfoRow
             icon={ShieldCheck}
             label="Créé le"
             value={
               user?.created_at
                 ? format(parseISO(user.created_at), "d MMMM yyyy", { locale: fr })
-                : "—"
+                : "Date inconnue"
             }
           />
           <InfoRow
@@ -193,10 +233,55 @@ export function Profile() {
       <section className="rounded-2xl border border-[var(--color-bara-border)] bg-[var(--color-bara-surface)] p-6">
         <h2 className="font-semibold">Sécurité</h2>
         <p className="mt-2 text-sm text-[var(--color-bara-muted)]">
-          Pour changer votre mot de passe, utilisez la page{" "}
-          <span className="font-medium">Mot de passe oublié</span> depuis l’écran de connexion.
+          Changez votre mot de passe ici. Aucun e-mail n’est envoyé.
         </p>
+        <form onSubmit={onChangePassword} className="mt-4 space-y-3">
+          <PasswordField
+            label="Nouveau mot de passe"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {password.length > 0 && (
+            <div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+                <div
+                  className={`h-2 rounded-full transition-all ${strength.color}`}
+                  style={{ width: strength.width }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-[var(--color-bara-muted)]">
+                Force : {strength.label}
+              </p>
+            </div>
+          )}
+          <PasswordField
+            label="Confirmer"
+            required
+            minLength={8}
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          {pwdErr && <p className="text-sm text-red-600">{pwdErr}</p>}
+          {pwdOk && (
+            <p className="text-sm text-green-600 dark:text-green-400">
+              Mot de passe mis à jour.
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={pwdPending || strength.label !== "Fort"}
+            className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-500 disabled:opacity-60"
+          >
+            {pwdPending ? "Mise à jour…" : "Changer le mot de passe"}
+          </button>
+        </form>
       </section>
+
+      <DataRightsPanel mode="full" />
     </div>
   );
 }

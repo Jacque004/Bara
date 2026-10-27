@@ -1,10 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
-const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeadersFor } from "../_shared/cors.ts";
+import { isProcessingRestricted, restrictedResponse } from "../_shared/privacy.ts";
 
 type TaskRow = {
   id: string;
@@ -29,7 +25,17 @@ function formatFrDate(dateISO: string): string {
   }).format(d);
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 Deno.serve(async (req: Request) => {
+  const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -76,6 +82,10 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if (isProcessingRestricted(user.user_metadata)) {
+      return restrictedResponse(corsHeaders);
+    }
+
     const body = await req.json().catch(() => ({}));
     const requestedUserId = body.user_id as string | undefined;
     if (requestedUserId && requestedUserId !== user.id) {
@@ -113,7 +123,10 @@ Deno.serve(async (req: Request) => {
         ? "<li>Aucune tâche en retard.</li>"
         : overdue
             .slice(0, 12)
-            .map((t) => `<li><strong>${t.title}</strong> - échéance ${formatFrDate(t.deadline)}</li>`)
+            .map(
+              (t) =>
+                `<li><strong>${escapeHtml(t.title)}</strong> - échéance ${escapeHtml(formatFrDate(t.deadline))}</li>`
+            )
             .join("");
 
     const soonLines =
@@ -121,7 +134,10 @@ Deno.serve(async (req: Request) => {
         ? "<li>Aucune tâche proche d'échéance.</li>"
         : soon
             .slice(0, 12)
-            .map((t) => `<li><strong>${t.title}</strong> - échéance ${formatFrDate(t.deadline)}</li>`)
+            .map(
+              (t) =>
+                `<li><strong>${escapeHtml(t.title)}</strong> - échéance ${escapeHtml(formatFrDate(t.deadline))}</li>`
+            )
             .join("");
 
     const html = `
@@ -135,7 +151,8 @@ Deno.serve(async (req: Request) => {
         <h3 style="margin:16px 0 8px;">Tâches à échéance proche (${soon.length})</h3>
         <ul>${soonLines}</ul>
         <p style="margin-top:20px; color:#6b7280; font-size:12px;">
-          Email généré automatiquement par BARA.
+          E-mail envoyé à votre demande. Il transite par Resend (États-Unis) pour l’acheminement.
+          BARA n’en conserve pas de copie.
         </p>
       </div>
     `;
@@ -163,10 +180,9 @@ Deno.serve(async (req: Request) => {
       throw new Error(detail);
     }
 
-    return new Response(
-      JSON.stringify({ success: true, sent_to: user.email }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return new Response(JSON.stringify({ error: msg }), {

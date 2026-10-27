@@ -1,10 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
-const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeadersFor } from "../_shared/cors.ts";
+import { isProcessingRestricted, restrictedResponse } from "../_shared/privacy.ts";
 
 type TaskRow = {
   id: string;
@@ -70,6 +66,7 @@ function parseStartDate(value: unknown): Date | null {
 }
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -98,6 +95,10 @@ Deno.serve(async (req: Request) => {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (isProcessingRestricted(user.user_metadata)) {
+      return restrictedResponse(corsHeaders);
     }
 
     const body = await req.json().catch(() => ({}));

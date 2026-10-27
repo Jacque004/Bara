@@ -16,7 +16,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["bara_logo.png"],
       manifest: {
-        name: "BARA — Organisation étudiante",
+        name: "BARA, organisation étudiante",
         short_name: "BARA",
         description:
           "Organisez matières, devoirs et révisions. Planning et mode Focus.",
@@ -40,30 +40,13 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,svg,woff2}"],
         navigateFallback: "/Bara/index.html",
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts-stylesheets",
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts-webfonts",
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
-        ],
       },
       devOptions: { enabled: false },
     }),
   ],
   resolve: {
     alias: { "@": path.resolve(root, "src") },
+    extensions: [".mjs", ".mts", ".ts", ".tsx", ".jsx", ".js", ".json"],
   },
   build: {
     rollupOptions: {

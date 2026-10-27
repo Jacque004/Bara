@@ -11,6 +11,7 @@ import {
   Timer,
   UserCircle2,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchProfile } from "@/lib/api";
 
@@ -62,7 +63,7 @@ export function Sidebar() {
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold tracking-tight">{displayName}</p>
             <p className="hidden truncate text-xs text-[var(--color-bara-muted)] sm:block">
-              {user?.email ?? "—"}
+              {user?.email ?? "E-mail indisponible"}
             </p>
           </div>
         </div>
@@ -91,6 +92,7 @@ export function Sidebar() {
         </nav>
 
         <div className="flex items-center gap-1 md:justify-end">
+          <ThemeToggle />
           <button
             type="button"
             onClick={() => void signOut()}
